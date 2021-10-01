@@ -10,8 +10,8 @@ module.exports = function (config) {
   // apksigner sign --ks mykeystorefile --ks-key-alias myaliasname myapkfile.apk
   var apksignerCmd = ['apksigner sign'];
   apksignerCmd.push('--ks ' + config.keystore);
-  apksignerCmd.push('--ks-pass ' + config.storepass);
-  apksignerCmd.push('--key-pass ' + config.keypass);
+  apksignerCmd.push('--ks-pass pass:' + config.storepass);
+  apksignerCmd.push('--key-pass pass:' + config.keypass);
   apksignerCmd.push('--ks-key-alias ' + config.alias);
   apksignerCmd.push('--in ' + config.file);
   apksignerCmd.push('--out ' + unalignedPath);
