@@ -3,9 +3,7 @@ var path = require('path');
 var exec = require('child-process-promise').exec;
 
 module.exports = function (config) {
-  var unalignedPath = config.output
-    ? config.output + '.apk'
-    : path.resolve(config.name + '-unaligned.apk');
+  var alignedPath = path.resolve(config.name + '-aligned.apk');
 
   // apksigner sign --ks mykeystorefile --ks-key-alias myaliasname myapkfile.apk
   var apksignerCmd = ['apksigner sign'];
@@ -13,15 +11,16 @@ module.exports = function (config) {
   apksignerCmd.push('--ks-pass pass:' + config.storepass);
   apksignerCmd.push('--key-pass pass:' + config.keypass);
   apksignerCmd.push('--ks-key-alias ' + config.alias);
-  apksignerCmd.push('--in ' + config.file);
-  apksignerCmd.push('--out ' + unalignedPath);
+  apksignerCmd.push('--in ' + alignedPath);
+  apksignerCmd.push('--out ' + config.name + '.apk');
 
   var zipalignCmd = ['zipalign -f -v 4'];
-  zipalignCmd.push(unalignedPath);
-  zipalignCmd.push(config.name + '.apk');
+  zipalignCmd.push(config.file);
+  zipalignCmd.push(alignedPath);
 
   var log = '';
-  return exec(apksignerCmd.join(' '), {
+
+  return exec(zipalignCmd.join(' '), {
     cwd: process.cwd(),
     env: process.env,
     maxBuffer: 1024 * 500
@@ -31,11 +30,11 @@ module.exports = function (config) {
       log += res.stdout;
     })
     .catch(function (err) {
-      console.log('jarsigner failed:', err);
+      console.log('zipalign failed:', err);
       throw err; // don't swallow; cancel here
     })
     .then(function () {
-      return exec(zipalignCmd.join(' '), {
+      return exec(apksignerCmd.join(' '), {
         cwd: process.cwd(),
         env: process.env,
         maxBuffer: 1024 * 500
@@ -46,7 +45,7 @@ module.exports = function (config) {
       log += res.stdout;
     })
     .catch(function (err) {
-      console.log('zipalign failed:', err);
+      console.log('apksigner failed:', err);
       throw err; // don't swallow; cancel here
     })
     .then(function () {
